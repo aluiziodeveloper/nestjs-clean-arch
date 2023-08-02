@@ -35,7 +35,7 @@ export class UserPrismaRepository implements UserRepository.Repository {
       }),
     })
 
-    const models = this.prismaService.user.findMany({
+    const models = await this.prismaService.user.findMany({
       ...(props.filter && {
         where: {
           name: {
@@ -43,17 +43,16 @@ export class UserPrismaRepository implements UserRepository.Repository {
             mode: 'insensitive',
           },
         },
-        orderBy: {
-          [orderByField]: orderByDir,
-        },
-        skip:
-          props.page && props.page > 0 ? (props.page - 1) * props.perPage : 1,
-        take: props.perPage && props.perPage > 0 ? props.perPage : 15,
       }),
+      orderBy: {
+        [orderByField]: orderByDir,
+      },
+      skip: props.page && props.page > 0 ? (props.page - 1) * props.perPage : 1,
+      take: props.perPage && props.perPage > 0 ? props.perPage : 15,
     })
 
     return new UserRepository.SearchResult({
-      items: (await models).map(model => UserModelMapper.toEntity(model)),
+      items: models.map(model => UserModelMapper.toEntity(model)),
       total: count,
       currentPage: props.page,
       perPage: props.perPage,
