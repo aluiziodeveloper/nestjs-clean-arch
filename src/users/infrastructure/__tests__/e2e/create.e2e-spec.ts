@@ -49,16 +49,11 @@ describe('UsersController unit tests', () => {
         .post('/users')
         .send(signupDto)
         .expect(201)
-      expect(Object.keys(res.body)).toStrictEqual([
-        'id',
-        'name',
-        'email',
-        'createdAt',
-      ])
-      const user = await repository.findById(res.body.id)
+      expect(Object.keys(res.body)).toStrictEqual(['data'])
+      const user = await repository.findById(res.body.data.id)
       const presenter = UsersController.userToResponse(user.toJSON())
       const serialized = instanceToPlain(presenter)
-      expect(res.body).toStrictEqual(serialized)
+      expect(res.body.data).toStrictEqual(serialized)
     })
   })
 })
