@@ -131,7 +131,11 @@ describe('UsersController unit tests', () => {
         .post('/users')
         .send(signupDto)
         .expect(409)
-      console.log(res.body)
+        .expect({
+          statusCode: 409,
+          error: 'Conflict',
+          message: 'Email address already used',
+        })
     })
   })
 })
