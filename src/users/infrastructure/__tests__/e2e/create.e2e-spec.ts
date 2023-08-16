@@ -72,5 +72,54 @@ describe('UsersController unit tests', () => {
         'password must be a string',
       ])
     })
+
+    it('should return a error with 422 code when the name field is invalid', async () => {
+      delete signupDto.name
+      const res = await request(app.getHttpServer())
+        .post('/users')
+        .send(signupDto)
+        .expect(422)
+      expect(res.body.error).toBe('Unprocessable Entity')
+      expect(res.body.message).toEqual([
+        'name should not be empty',
+        'name must be a string',
+      ])
+    })
+
+    it('should return a error with 422 code when the email field is invalid', async () => {
+      delete signupDto.email
+      const res = await request(app.getHttpServer())
+        .post('/users')
+        .send(signupDto)
+        .expect(422)
+      expect(res.body.error).toBe('Unprocessable Entity')
+      expect(res.body.message).toEqual([
+        'email must be an email',
+        'email should not be empty',
+        'email must be a string',
+      ])
+    })
+
+    it('should return a error with 422 code when the password field is invalid', async () => {
+      delete signupDto.password
+      const res = await request(app.getHttpServer())
+        .post('/users')
+        .send(signupDto)
+        .expect(422)
+      expect(res.body.error).toBe('Unprocessable Entity')
+      expect(res.body.message).toEqual([
+        'password should not be empty',
+        'password must be a string',
+      ])
+    })
+
+    it('should return a error with 422 code with invalid field provided', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/users')
+        .send(Object.assign(signupDto, { xpto: 'fake' }))
+        .expect(422)
+      expect(res.body.error).toBe('Unprocessable Entity')
+      expect(res.body.message).toEqual(['property xpto should not exist'])
+    })
   })
 })
