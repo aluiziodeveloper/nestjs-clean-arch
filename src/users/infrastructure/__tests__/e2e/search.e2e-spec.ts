@@ -75,6 +75,48 @@ describe('UsersController e2e tests', () => {
       })
     })
 
+    it('should return the users ordered by createdAt', async () => {
+      const createdAt = new Date()
+      const entities: UserEntity[] = []
+      const arrange = ['test', 'a', 'TEST', 'b', 'TeSt']
+      arrange.forEach((element, index) => {
+        entities.push(
+          new UserEntity({
+            ...UserDataBuilder({}),
+            name: element,
+            email: `a${index}@a.com`,
+          }),
+        )
+      })
+      await prismaService.user.createMany({
+        data: entities.map(item => item.toJSON()),
+      })
+      const searchParams = {
+        page: 1,
+        perPage: 2,
+        sort: 'name',
+        sortDir: 'asc',
+        filter: 'TEST',
+      }
+      const queryParams = new URLSearchParams(searchParams as any).toString()
+
+      const res = await request(app.getHttpServer())
+        .get(`/users/?${queryParams}`)
+        .expect(200)
+      expect(Object.keys(res.body)).toStrictEqual(['data', 'meta'])
+      expect(res.body).toStrictEqual({
+        data: [entities[0], entities[4]].map(item =>
+          instanceToPlain(UsersController.userToResponse(item)),
+        ),
+        meta: {
+          total: 3,
+          currentPage: 1,
+          perPage: 2,
+          lastPage: 2,
+        },
+      })
+    })
+
     it('should return a error with 422 code when the query params is invalid', async () => {
       const res = await request(app.getHttpServer())
         .get('/users/?fakeId=10')
