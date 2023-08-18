@@ -14,7 +14,7 @@ import { UserEntity } from '@/users/domain/entities/user.entity'
 import { UserDataBuilder } from '@/users/domain/testing/helpers/user-data-builder'
 import { UpdateUserDto } from '../../dtos/update-user.dto'
 
-describe('UsersController unit tests', () => {
+describe('UsersController e2e tests', () => {
   let app: INestApplication
   let module: TestingModule
   let repository: UserRepository.Repository
@@ -71,18 +71,17 @@ describe('UsersController unit tests', () => {
       ])
     })
 
-    // it('should return a error with 422 code when the name field is invalid', async () => {
-    //   delete signupDto.name
-    //   const res = await request(app.getHttpServer())
-    //     .post('/users')
-    //     .send(signupDto)
-    //     .expect(422)
-    //   expect(res.body.error).toBe('Unprocessable Entity')
-    //   expect(res.body.message).toEqual([
-    //     'name should not be empty',
-    //     'name must be a string',
-    //   ])
-    // })
+    it('should return a error with 404 code when throw NotFoundError with invalid id', async () => {
+      const res = await request(app.getHttpServer())
+        .put('/users/fakeId')
+        .send(updateUserDto)
+        .expect(404)
+        .expect({
+          statusCode: 404,
+          error: 'Not Found',
+          message: 'UserModel not found using ID fakeId',
+        })
+    })
 
     // it('should return a error with 422 code when the email field is invalid', async () => {
     //   delete signupDto.email
