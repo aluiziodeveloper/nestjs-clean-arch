@@ -12,6 +12,8 @@ import { instanceToPlain } from 'class-transformer'
 import { applyGlobalConfig } from '@/global-config'
 import { UserEntity } from '@/users/domain/entities/user.entity'
 import { UserDataBuilder } from '@/users/domain/testing/helpers/user-data-builder'
+import { HashProvider } from '@/shared/application/providers/hash-provider'
+import { BcryptjsHashProvider } from '../../providers/hash-provider/bcryptjs-hash.provider'
 
 describe('UsersController e2e tests', () => {
   let app: INestApplication
@@ -19,6 +21,9 @@ describe('UsersController e2e tests', () => {
   let repository: UserRepository.Repository
   const prismaService = new PrismaClient()
   let entity: UserEntity
+  let hashProvider: HashProvider
+  let hashPassword: string
+  let accessToken: string
 
   beforeAll(async () => {
     setupPrismaTests()
@@ -33,18 +38,32 @@ describe('UsersController e2e tests', () => {
     applyGlobalConfig(app)
     await app.init()
     repository = module.get<UserRepository.Repository>('UserRepository')
+    hashProvider = new BcryptjsHashProvider()
+    hashPassword = await hashProvider.generateHash('1234')
   })
 
   beforeEach(async () => {
     await prismaService.user.deleteMany()
-    entity = new UserEntity(UserDataBuilder({}))
+    entity = new UserEntity(
+      UserDataBuilder({
+        email: 'a@a.com',
+        password: hashPassword,
+      }),
+    )
     await repository.insert(entity)
+
+    const loginResponse = await request(app.getHttpServer())
+      .post('/users/login')
+      .send({ email: 'a@a.com', password: '1234' })
+      .expect(200)
+    accessToken = loginResponse.body.accessToken
   })
 
   describe('GET /users/:id', () => {
     it('should get a user', async () => {
       const res = await request(app.getHttpServer())
         .get(`/users/${entity._id}`)
+        .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
       const presenter = UsersController.userToResponse(entity.toJSON())
       const serialized = instanceToPlain(presenter)
@@ -54,11 +73,22 @@ describe('UsersController e2e tests', () => {
     it('should return a error with 404 code when throw NotFoundError with invalid id', async () => {
       const res = await request(app.getHttpServer())
         .get('/users/fakeId')
+        .set('Authorization', `Bearer ${accessToken}`)
         .expect(404)
         .expect({
           statusCode: 404,
           error: 'Not Found',
           message: 'UserModel not found using ID fakeId',
+        })
+    })
+
+    it('should return a error with 401 code when the request is not authorized', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/users/fakeId')
+        .expect(401)
+        .expect({
+          statusCode: 401,
+          message: 'Unauthorized',
         })
     })
   })
