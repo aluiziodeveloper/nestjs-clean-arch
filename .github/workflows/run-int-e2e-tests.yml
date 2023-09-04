@@ -28,7 +28,7 @@ jobs:
 
       - run: npm ci  # instalar as dependencias sem interacao
 
-      - run: npx prisma generate --schema ./src/shared/infrastructure/database/prisma/shema.prisma
+      - run: npx prisma generate --schema ./src/shared/infrastructure/database/prisma/schema.prisma
         env:
           DATABASE_URL: "postgresql://postgres:docker@localhost:5432/projectdb?schema=public"
 
